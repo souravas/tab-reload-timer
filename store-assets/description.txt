@@ -1,0 +1,37 @@
+Need a dashboard, queue, ticket page, or live feed to stay fresh? Tab Reload Timer reloads any tab on a schedule you set — each tab with its own independent timer.
+
+Open the popup, pick an interval (or hit a one-click preset), press Start. That's the whole workflow. A countdown badge on the toolbar icon always tells you when the next reload lands.
+
+What it does
+• Per-tab timers — every tab gets its own interval, from 30 seconds to hours
+• One-click presets (30s, 1m, 2m, 5m, 15m, 30m, 1h) plus a custom h/m/s input
+• Random variation — add ± jitter so reloads don't fire at robotic, identical intervals
+• Badge countdown — see the time remaining right on the toolbar icon
+• Active-jobs list — every running timer in one popup: live countdowns, pause, stop, or jump to the tab
+• Only reload when inactive — defers the reload while you're reading the page, fires the moment you switch away
+• Hard reload option — bypass the browser cache on every reload for pages that cache too aggressively
+• Stop after N reloads — "reload 20 times, then stop"
+• Survives restarts — timers are re-attached to your tabs after you restart the browser
+• Right-click menu — start or stop reloading straight from the page
+• Keyboard shortcut — Alt+Shift+R toggles reloading on the current tab
+• Clean, compact popup with automatic light/dark mode
+
+Why install it
+• Keep dashboards, monitors, and status boards current without touching them
+• Watch queues, tickets, builds, and auctions while you work in another tab
+• Refresh feeds and scoreboards in the background — without the page yanking itself out from under you while you read
+• Configure everything in two clicks; no options pages buried three levels deep
+
+Privacy first
+• No data collection, no analytics, no tracking, no account
+• Makes zero network requests of its own — reloading uses Chrome's built-in API
+• No host permissions and no content scripts; it cannot read or modify any page
+• Everything is stored locally in your browser
+
+Limitations to know
+• Minimum interval is 30 seconds (the scheduling floor Chrome gives Manifest V3 extensions)
+• Browser-internal pages (chrome://, the Web Store) can't be reloaded by extensions
+• Timers are restored after a restart by matching tab URLs, so a tab that changed address while the browser was closed won't be re-attached
+
+Open source — review the code, file issues, or contribute:
+https://github.com/souravas/tab-reload-timer
