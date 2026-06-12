@@ -58,8 +58,8 @@ Regenerate with `python3 generate.py`.
 ```
 Tab Reload Timer automatically reloads browser tabs on a user-defined schedule. Every feature — per-tab
 timers, interval presets, random variation, the badge countdown, pause/stop controls, the context
-menu, the keyboard shortcut, and re-attaching timers after a browser restart — exists solely to
-configure, display, or perform those scheduled tab reloads.
+menu, the keyboard shortcut, the optional "timer finished" notification, and re-attaching timers
+after a browser restart — exists solely to configure, display, or perform those scheduled tab reloads.
 ```
 
 ### Permission justifications
@@ -85,9 +85,10 @@ per active timer.
 **storage**
 
 ```
-Required to persist the user's reload timers (chrome.storage.local) so they survive service-worker
-suspension and browser restarts, and two preferences — badge on/off and default interval —
-(chrome.storage.sync). No browsing data leaves the device; nothing is transmitted to any server.
+Required to persist the user's reload timers and last-used timer options (chrome.storage.local) so
+they survive service-worker suspension and browser restarts, and three preferences — badge on/off,
+default interval, and finish notification on/off — (chrome.storage.sync). No browsing data leaves
+the device; nothing is transmitted to any server.
 ```
 
 **contextMenus**
@@ -95,6 +96,14 @@ suspension and browser restarts, and two preferences — badge on/off and defaul
 ```
 Required for the right-click "Tab Reload Timer" menu that lets the user start (with preset intervals)
 or stop reloading the current page without opening the popup.
+```
+
+**notifications**
+
+```
+Used only for an optional, off-by-default desktop notification telling the user that a "stop after
+N reloads" timer has finished. The notification shows the page's hostname and the reload count.
+Nothing is collected or transmitted.
 ```
 
 ### Host permission justification
@@ -134,9 +143,9 @@ Certifications (check all three):
 - [x] I do not use or transfer user data for purposes that are unrelated to my item's single purpose
 - [x] I do not use or transfer user data to determine creditworthiness or for lending purposes
 
-Note: the user's reload timers (tab URL/title/favicon, interval, timer state) and two preferences
-are stored only on-device in chrome.storage and are never transmitted anywhere. This is local
-persistence of user settings, not data collection.
+Note: the user's reload timers (tab URL/title/favicon, interval, timer state), last-used timer
+options, and three preferences are stored only on-device in chrome.storage and are never transmitted
+anywhere. This is local persistence of user settings, not data collection.
 
 ### Privacy policy URL
 

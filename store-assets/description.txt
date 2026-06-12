@@ -10,7 +10,9 @@ What it does
 • Active-jobs list — every running timer in one popup: live countdowns, pause, stop, or jump to the tab
 • Only reload when inactive — defers the reload while you're reading the page, fires the moment you switch away
 • Hard reload option — bypass the browser cache on every reload for pages that cache too aggressively
-• Stop after N reloads — "reload 20 times, then stop"
+• Stop after N reloads — "reload 20 times, then stop", with a "done" badge and an optional finished notification
+• Remembers your setup — the popup pre-fills the interval and options from your last timer
+• Pause all / stop all — control every running timer with one click
 • Survives restarts — timers are re-attached to your tabs after you restart the browser
 • Right-click menu — start or stop reloading straight from the page
 • Keyboard shortcut — Alt+Shift+R toggles reloading on the current tab

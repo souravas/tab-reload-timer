@@ -242,9 +242,13 @@ def popup_shell(h: float, body: str) -> str:
 
 def jobs_section(y: float, rows: list) -> str:
     out = [micro(16, y, "Other active jobs")]
-    out.append(f'<rect x="{PW - 38}" y="{y - 12}" width="24" height="17" rx="8.5" fill="none" stroke="{ACC}"/>')
-    out.append(f'<text x="{PW - 26}" y="{y}" text-anchor="middle" font-family="{MONO}" '
+    out.append(f'<rect x="147" y="{y - 12}" width="24" height="17" rx="8.5" fill="none" stroke="{ACC}"/>')
+    out.append(f'<text x="159" y="{y}" text-anchor="middle" font-family="{MONO}" '
                f'font-size="10" font-weight="600" fill="{ACC}">{len(rows)}</text>')
+    # pause-all / stop-all bulk controls at the right edge of the header
+    out.append(f'<path d="M {PW - 52} {y - 9.5} V {y - 0.5} M {PW - 47} {y - 9.5} V {y - 0.5}" '
+               f'stroke="{FAINT}" stroke-width="2.2" stroke-linecap="round"/>')
+    out.append(f'<rect x="{PW - 36}" y="{y - 9.5}" width="10" height="10" rx="2.2" fill="{FAINT}"/>')
     yy = y + 10
     for host, time, *flags in rows:
         out.append(job_row(12, yy, PW - 24, host, time, paused="paused" in flags))
@@ -500,8 +504,8 @@ def screenshot_jobs() -> str:
       <text x="{cx}" y="312" font-family="{FONT}" font-size="14.5" fill="{DIM}">Each tab keeps its own interval,</text>
       <text x="{cx}" y="334" font-family="{FONT}" font-size="14.5" fill="{DIM}">options, and countdown.</text>
       {callout(cx, 408, 268, "Manage without switching")}
-      <text x="{cx}" y="452" font-family="{FONT}" font-size="14.5" fill="{DIM}">Pause or stop any job from here —</text>
-      <text x="{cx}" y="474" font-family="{FONT}" font-size="14.5" fill="{DIM}">click a row to jump to its tab.</text>
+      <text x="{cx}" y="452" font-family="{FONT}" font-size="14.5" fill="{DIM}">Pause or stop any job — or all at once.</text>
+      <text x="{cx}" y="474" font-family="{FONT}" font-size="14.5" fill="{DIM}">Click a row to jump to its tab.</text>
       {callout(cx, 548, 246, "Survives restarts")}
       <text x="{cx}" y="592" font-family="{FONT}" font-size="14.5" fill="{DIM}">Timers re-attach to your tabs</text>
       <text x="{cx}" y="614" font-family="{FONT}" font-size="14.5" fill="{DIM}">after the browser restarts.</text>
