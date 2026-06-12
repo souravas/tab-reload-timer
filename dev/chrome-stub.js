@@ -57,8 +57,8 @@
     },
     windows: { update: async () => {} },
     storage: {
-      local: { get: async () => ({ jobs }) },
-      sync: { get: async () => ({ settings: { badge: true, defaultIntervalSec: 300 } }), set: async () => {} },
+      local: { get: async () => ({ jobs }), set: async () => {} },
+      sync: { get: async () => ({ settings: { badge: true, defaultIntervalSec: 300, notifyOnComplete: false } }), set: async () => {} },
       onChanged: { addListener: () => {} },
     },
     runtime: {

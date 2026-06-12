@@ -10,7 +10,9 @@ Chrome extension that automatically reloads tabs on a custom interval. Listed on
 - **Active-jobs list** — see every tab with a running job, its live countdown, and pause/stop/jump-to-tab without leaving the popup.
 - **Only reload when inactive** — defer the reload while you're looking at the tab; it fires the moment you switch away.
 - **Hard reload** — optionally bypass the HTTP cache on every reload (`chrome.tabs.reload(…, { bypassCache: true })`).
-- **Stop after N reloads** — "reload 20 times, then stop."
+- **Stop after N reloads** — "reload 20 times, then stop." When it finishes, the badge flashes `done` and, if you opt in, a desktop notification fires.
+- **Remembers your setup** — the popup pre-fills the interval and options from the last job you started.
+- **Pause all / stop all** — bulk controls in the jobs-list header act on every running job at once.
 - **Session restore** — jobs survive browser restarts; they're re-attached to open tabs by URL (exact match first, then origin).
 - **Context menu** — right-click → Tab Reload Timer → start with a preset / stop.
 - **Keyboard shortcut** — `Alt+Shift+R` toggles reloading on the current tab with your default interval (rebindable at `chrome://extensions/shortcuts`).
@@ -44,6 +46,7 @@ The popup ([popup/popup.js](popup/popup.js)) is a thin view: it reads job state 
 - `alarms` — scheduling that survives service-worker shutdown
 - `storage` — persist jobs (local) and settings (sync)
 - `contextMenus` — right-click quick actions
+- `notifications` — the opt-in "job finished" alert for stop-after-N timers (off by default)
 
 No host permissions, no content scripts, no remote code, no network requests. See [PRIVACY.md](PRIVACY.md).
 
@@ -55,17 +58,18 @@ background.js           Service worker: jobs, alarms, badge, context menu, sessi
 popup/                  Toolbar popup (HTML/CSS/JS, bundled Spline Sans fonts)
 icons/                  Toolbar icons, idle + active variants (dev/make_icons.py)
 store-assets/           Chrome Web Store listing: description, publishing answers, images (generate.py)
-dev/                    Dev tooling (not shipped): icon generator, popup preview, build script
+dev/                    Dev tooling (not shipped): icon generator, popup preview, build script, unit tests
 spec.md                 Design spec
 ```
 
 ## Development
 
 ```sh
-python3 dev/make_icons.py        # regenerate icons/
-open dev/preview.html            # preview the popup in a plain tab (?state=idle|run|paused|waiting|blocked)
-python3 store-assets/generate.py # regenerate store listing images
-sh dev/build.sh                  # package dist/tab-reload-timer-<version>.zip for the Web Store
+node --test "dev/tests/*.test.js"  # run unit tests (scheduling, restore matching, completion)
+python3 dev/make_icons.py          # regenerate icons/
+open dev/preview.html              # preview the popup in a plain tab (?state=idle|run|paused|waiting|blocked)
+python3 store-assets/generate.py   # regenerate store listing images
+sh dev/build.sh                    # package dist/tab-reload-timer-<version>.zip for the Web Store
 ```
 
 ## License

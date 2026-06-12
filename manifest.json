@@ -2,9 +2,9 @@
   "manifest_version": 3,
   "name": "Tab Reload Timer — Auto Refresh Pages",
   "short_name": "Tab Reload Timer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Auto-reload tabs on a custom interval. Per-tab timers with random variation, badge countdown, and session restore.",
-  "permissions": ["tabs", "alarms", "storage", "contextMenus"],
+  "permissions": ["tabs", "alarms", "storage", "contextMenus", "notifications"],
   "background": {
     "service_worker": "background.js"
   },

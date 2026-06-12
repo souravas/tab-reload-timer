@@ -6,7 +6,7 @@ const $ = (id) => document.getElementById(id);
 
 let currentTab = null;
 let jobs = {};
-let settings = { badge: true, defaultIntervalSec: 300 };
+let settings = { badge: true, defaultIntervalSec: 300, notifyOnComplete: false };
 
 const reloadable = (url) => /^(https?|file|ftp):/.test(url || '');
 
@@ -131,6 +131,11 @@ function renderJobsList() {
   const others = Object.values(jobs).filter((j) => j.tabId !== currentTab?.id);
   $('jobsSection').hidden = others.length === 0;
   $('jobCount').textContent = others.length;
+  const allPaused = Object.values(jobs).length > 0 && Object.values(jobs).every((j) => j.paused);
+  $('pauseAllBtn').title = allPaused ? 'Resume all jobs' : 'Pause all jobs';
+  $('pauseAllIcon').innerHTML = allPaused
+    ? '<path d="M8 5.5v13l10-6.5z" fill="currentColor"/>'
+    : '<path d="M8 5v14M16 5v14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>';
   list.textContent = '';
   for (const job of others) {
     const li = document.createElement('li');
@@ -183,6 +188,19 @@ function syncChips() {
   }
 }
 
+// Pre-fill the form with the last configuration the user started a job with,
+// so a recurring setup (e.g. "2m, hard reload") survives popup closes.
+function applyConfig(cfg) {
+  setInputsFromSec(cfg.intervalSec || settings.defaultIntervalSec);
+  $('inVar').value = cfg.variationSec || 0;
+  $('inInactive').checked = !!cfg.onlyWhenInactive;
+  $('inCache').checked = !!cfg.bypassCache;
+  $('inLimit').value = cfg.remainingReloads || '';
+  if (cfg.variationSec || cfg.onlyWhenInactive || cfg.bypassCache || cfg.remainingReloads) {
+    document.querySelector('.more').open = true;
+  }
+}
+
 async function start() {
   const intervalSec = intervalFromInputs();
   if (intervalSec < MIN_INTERVAL_S) {
@@ -199,6 +217,7 @@ async function start() {
   };
   const job = await chrome.runtime.sendMessage({ type: 'start', tabId: currentTab.id, opts });
   if (job) {
+    chrome.storage.local.set({ lastConfig: opts });
     jobs[currentTab.id] = job;
     render();
   }
@@ -208,12 +227,14 @@ async function start() {
 
 function renderSettings() {
   $('setBadge').checked = !!settings.badge;
-  $('setDefaultMin').value = Math.max(1, Math.round(settings.defaultIntervalSec / 60));
+  $('setDefaultSec').value = Math.max(MIN_INTERVAL_S, Math.round(settings.defaultIntervalSec));
+  $('setNotify').checked = !!settings.notifyOnComplete;
 }
 
 async function saveSettings() {
   settings.badge = $('setBadge').checked;
-  settings.defaultIntervalSec = Math.max(1, Number($('setDefaultMin').value) || 5) * 60;
+  settings.defaultIntervalSec = Math.min(86400, Math.max(MIN_INTERVAL_S, Number($('setDefaultSec').value) || 300));
+  settings.notifyOnComplete = $('setNotify').checked;
   await chrome.storage.sync.set({ settings });
 }
 
@@ -221,14 +242,14 @@ async function saveSettings() {
 
 async function init() {
   [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  const [{ jobs: storedJobs }, { settings: storedSettings }] = await Promise.all([
-    chrome.storage.local.get('jobs'),
+  const [{ jobs: storedJobs, lastConfig }, { settings: storedSettings }] = await Promise.all([
+    chrome.storage.local.get(['jobs', 'lastConfig']),
     chrome.storage.sync.get('settings'),
   ]);
   jobs = storedJobs || {};
   settings = { ...settings, ...(storedSettings || {}) };
 
-  if (!jobs[currentTab?.id]) setInputsFromSec(settings.defaultIntervalSec);
+  if (!jobs[currentTab?.id]) applyConfig(lastConfig || {});
   renderSettings();
   render();
 
@@ -249,11 +270,19 @@ async function init() {
   });
   for (const id of ['inH', 'inM', 'inS']) $(id).addEventListener('input', syncChips);
 
+  $('pauseAllBtn').addEventListener('click', () => {
+    const all = Object.values(jobs);
+    const allPaused = all.length > 0 && all.every((j) => j.paused);
+    chrome.runtime.sendMessage({ type: allPaused ? 'resumeAll' : 'pauseAll' });
+  });
+  $('stopAllBtn').addEventListener('click', () => chrome.runtime.sendMessage({ type: 'stopAll' }));
+
   $('settingsBtn').addEventListener('click', () => {
     $('settingsPanel').hidden = !$('settingsPanel').hidden;
   });
   $('setBadge').addEventListener('change', saveSettings);
-  $('setDefaultMin').addEventListener('change', saveSettings);
+  $('setDefaultSec').addEventListener('change', saveSettings);
+  $('setNotify').addEventListener('change', saveSettings);
 
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && changes.jobs) {

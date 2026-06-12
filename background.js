@@ -4,6 +4,8 @@
 
 const MIN_INTERVAL_S = 30; // chrome.alarms floor in MV3
 const ORPHAN_TTL_MS = 2 * 60 * 1000;
+const DONE_BADGE_MS = 12 * 1000; // how long the "done" badge lingers after stop-after-N
+const NA_BADGE_MS = 3 * 1000; // how long the "n/a" badge explains a no-op shortcut
 
 const ICONS_IDLE = { 16: 'icons/idle-16.png', 32: 'icons/idle-32.png', 48: 'icons/idle-48.png', 128: 'icons/idle-128.png' };
 const ICONS_ACTIVE = { 16: 'icons/active-16.png', 32: 'icons/active-32.png', 48: 'icons/active-48.png', 128: 'icons/active-128.png' };
@@ -40,9 +42,19 @@ let settingsCache = null;
 async function getSettings() {
   if (!settingsCache) {
     const stored = (await chrome.storage.sync.get('settings')).settings || {};
-    settingsCache = { badge: true, defaultIntervalSec: 300, ...stored };
+    settingsCache = { badge: true, defaultIntervalSec: 300, notifyOnComplete: false, ...stored };
   }
   return settingsCache;
+}
+
+function hostOf(url) {
+  try {
+    const u = new URL(url);
+    if (u.protocol === 'file:') return u.pathname.split('/').pop() || 'local file';
+    return u.hostname.replace(/^www\./, '') || url;
+  } catch {
+    return url || 'this tab';
+  }
 }
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === 'sync' && changes.settings) {
@@ -106,28 +118,56 @@ async function stopJob(tabId, { tabGone = false } = {}) {
   tick();
 }
 
+function pauseJob(job) {
+  if (job.paused) return;
+  job.paused = true;
+  job.pausedRemainingMs = Math.max(0, (job.nextReloadAt || Date.now()) - Date.now());
+  chrome.alarms.clear(`job:${job.tabId}`);
+}
+
+function resumeJob(job) {
+  if (!job.paused) return;
+  job.paused = false;
+  const remainingMs = job.pausedRemainingMs || 0;
+  delete job.pausedRemainingMs;
+  if (job.pendingReload) {
+    // A deferred reload is owed; flushPendingReloads fires it (below).
+    job.nextReloadAt = null;
+  } else {
+    job.nextReloadAt = Date.now() + Math.max(1000, remainingMs);
+    chrome.alarms.create(`job:${job.tabId}`, { when: job.nextReloadAt });
+  }
+}
+
 async function setPaused(tabId, paused) {
   await withJobs((jobs) => {
     const job = jobs[tabId];
-    if (!job) return;
-    if (paused && !job.paused) {
-      job.paused = true;
-      job.pausedRemainingMs = Math.max(0, (job.nextReloadAt || Date.now()) - Date.now());
-      chrome.alarms.clear(`job:${tabId}`);
-    } else if (!paused && job.paused) {
-      job.paused = false;
-      const remainingMs = job.pausedRemainingMs || 0;
-      delete job.pausedRemainingMs;
-      if (job.pendingReload) {
-        // A deferred reload is owed; flushPendingReloads fires it (below).
-        job.nextReloadAt = null;
-      } else {
-        job.nextReloadAt = Date.now() + Math.max(1000, remainingMs);
-        chrome.alarms.create(`job:${tabId}`, { when: job.nextReloadAt });
-      }
-    }
+    if (job) (paused ? pauseJob : resumeJob)(job);
   });
   flushPendingReloads();
+  tick();
+}
+
+async function setAllPaused(paused) {
+  await withJobs((jobs) => {
+    for (const job of Object.values(jobs)) (paused ? pauseJob : resumeJob)(job);
+  });
+  flushPendingReloads();
+  tick();
+}
+
+async function stopAllJobs() {
+  await withJobs((jobs) => {
+    for (const key of Object.keys(jobs)) {
+      const tabId = Number(key);
+      chrome.alarms.clear(`job:${tabId}`);
+      badgeCache.delete(tabId);
+      applyIcon(tabId, false);
+      chrome.action.setBadgeText({ tabId, text: '' }).catch(() => {});
+      delete jobs[key];
+    }
+  });
+  updateStopMenu();
   tick();
 }
 
@@ -170,12 +210,33 @@ async function fireJob(jobs, job) {
     if (job.remainingReloads <= 0) {
       delete jobs[job.tabId];
       chrome.alarms.clear(`job:${job.tabId}`);
-      chrome.action.setBadgeText({ tabId: job.tabId, text: '' }).catch(() => {});
-      applyIcon(job.tabId, false);
+      announceCompletion(job);
       return;
     }
   }
   scheduleNext(job);
+}
+
+// A "stop after N" job hit zero: flash a "done" badge on the tab and,
+// if the user opted in, raise a notification.
+async function announceCompletion(job) {
+  applyIcon(job.tabId, false);
+  badgeCache.delete(job.tabId);
+  chrome.action.setBadgeBackgroundColor({ tabId: job.tabId, color: '#1d9a5b' }).catch(() => {});
+  chrome.action.setBadgeTextColor({ tabId: job.tabId, color: '#ffffff' }).catch(() => {});
+  chrome.action.setBadgeText({ tabId: job.tabId, text: 'done' }).catch(() => {});
+  setTimeout(async () => {
+    const jobs = await getJobs();
+    if (!jobs[job.tabId]) chrome.action.setBadgeText({ tabId: job.tabId, text: '' }).catch(() => {});
+  }, DONE_BADGE_MS);
+  const settings = await getSettings();
+  if (!settings.notifyOnComplete) return;
+  chrome.notifications.create({
+    type: 'basic',
+    iconUrl: 'icons/idle-128.png',
+    title: 'Tab Reload Timer',
+    message: `Done: reloaded ${hostOf(job.url)} ${job.reloadCount} time${job.reloadCount === 1 ? '' : 's'}.`,
+  });
 }
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
@@ -339,7 +400,15 @@ chrome.commands.onCommand.addListener(async (command) => {
   if (command !== 'toggle-reload') return;
   const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
   if (!tab || tab.id == null) return;
-  if (!/^(https?|file|ftp):/.test(tab.url || tab.pendingUrl || '')) return;
+  if (!/^(https?|file|ftp):/.test(tab.url || tab.pendingUrl || '')) {
+    // Page can't be reloaded by extensions — flash "n/a" so the shortcut
+    // doesn't appear to silently do nothing.
+    chrome.action.setBadgeBackgroundColor({ tabId: tab.id, color: '#5f6b66' }).catch(() => {});
+    chrome.action.setBadgeTextColor({ tabId: tab.id, color: '#ffffff' }).catch(() => {});
+    chrome.action.setBadgeText({ tabId: tab.id, text: 'n/a' }).catch(() => {});
+    setTimeout(() => chrome.action.setBadgeText({ tabId: tab.id, text: '' }).catch(() => {}), NA_BADGE_MS);
+    return;
+  }
   const jobs = await getJobs();
   if (jobs[tab.id]) {
     await stopJob(tab.id);
@@ -504,6 +573,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         return setPaused(msg.tabId, true);
       case 'resume':
         return setPaused(msg.tabId, false);
+      case 'pauseAll':
+        return setAllPaused(true);
+      case 'resumeAll':
+        return setAllPaused(false);
+      case 'stopAll':
+        return stopAllJobs();
       case 'reloadNow': {
         await withJobs(async (jobs) => {
           const job = jobs[msg.tabId];

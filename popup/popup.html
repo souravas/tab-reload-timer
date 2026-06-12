@@ -30,7 +30,11 @@
     </label>
     <label class="setting-row">
       <span>Default interval</span>
-      <span class="inline-input"><input type="number" id="setDefaultMin" min="1" max="1440"> <em>min</em></span>
+      <span class="inline-input"><input type="number" id="setDefaultSec" min="30" max="86400"> <em>sec</em></span>
+    </label>
+    <label class="setting-row">
+      <span>Notify when a job finishes</span>
+      <input type="checkbox" id="setNotify" class="switch">
     </label>
   </section>
 
@@ -124,6 +128,14 @@
       <div class="jobs-head">
         <span class="micro-label">Other active jobs</span>
         <span class="count" id="jobCount">0</span>
+        <span class="jobs-actions">
+          <button id="pauseAllBtn" class="mini-btn" title="Pause all jobs">
+            <svg viewBox="0 0 24 24" id="pauseAllIcon"><path d="M8 5v14M16 5v14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+          </button>
+          <button id="stopAllBtn" class="mini-btn stop" title="Stop all jobs">
+            <svg viewBox="0 0 24 24"><rect x="5.5" y="5.5" width="13" height="13" rx="2" fill="currentColor"/></svg>
+          </button>
+        </span>
       </div>
       <ul id="jobsList"></ul>
     </section>

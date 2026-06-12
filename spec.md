@@ -27,7 +27,10 @@ A simple, modern Chrome extension that automatically reloads tabs on a custom in
 | 8 | **Stop after N reloads** | Per-job optional counter ("reload 20 times, then stop"). Small to build, genuinely useful. |
 | 9 | **Context menu on the page** | Right-click → "Tab Reload Timer" → start/stop with preset intervals. Quick path that skips the popup. |
 | 10 | **Hard reload (bypass cache)** | Per-job toggle. Dashboards and status pages are exactly the pages whose caching defeats auto-reloading; `chrome.tabs.reload(id, { bypassCache: true })` costs nothing. |
-| 11 | **Keyboard shortcut** | `Alt+Shift+R` toggles reloading on the current tab with the default interval (rebindable at `chrome://extensions/shortcuts`). |
+| 11 | **Keyboard shortcut** | `Alt+Shift+R` toggles reloading on the current tab with the default interval (rebindable at `chrome://extensions/shortcuts`). On a non-reloadable page the badge flashes `n/a` instead of silently doing nothing. |
+| 12 | **Remember last-used config** | The popup pre-fills the interval and options from the last job the user started, so a recurring setup survives popup closes. |
+| 13 | **Pause all / stop all** | Bulk controls in the jobs-list header pause/resume or stop every job at once. |
+| 14 | **Completion feedback** | When a "stop after N" job finishes, the badge flashes `done` and an opt-in desktop notification fires (`notifications` permission, off by default). |
 
 ### ❌ Features we drop (and why)
 
@@ -56,6 +59,7 @@ Dropping these keeps permissions minimal (no `scripting`, no `<all_urls>` host p
 - `alarms` — scheduling that survives service-worker shutdown.
 - `storage` — persist jobs and settings.
 - `contextMenus` — right-click quick actions.
+- `notifications` — opt-in "job finished" alert when a stop-after-N job completes.
 - *No host permissions, no `scripting`.* Reloading uses `chrome.tabs.reload()`, which needs none of that.
 
 ### Scheduling
@@ -73,7 +77,8 @@ Dropping these keeps permissions minimal (no `scripting`, no `<all_urls>` host p
   - `nextReloadAt` (epoch ms) — drives countdown display
 - **Tab closed** → job deleted automatically (`tabs.onRemoved`).
 - **Browser restart** → on startup, stored jobs are matched to open tabs by URL (exact match first, then origin match); matched jobs resume, unmatched jobs are discarded after a grace period.
-- Global settings (`badge on/off`, default interval) in `chrome.storage.sync`.
+- Global settings (`badge on/off`, default interval in seconds, finish notification on/off) in `chrome.storage.sync`.
+- The last-used popup configuration (`lastConfig`) in `chrome.storage.local`; it pre-fills the form on the next popup open.
 
 ## 4. UI design
 
@@ -108,7 +113,7 @@ A single ~340px-wide popup, two zones:
 - **Preset chips** for one-click intervals; the custom input is right there for everything else.
 - **Advanced options collapsed** behind "More options" so the default view stays minimal.
 - **Active jobs list**: favicon, hostname, live countdown, pause/stop controls. Clicking a row focuses that tab.
-- **Footer gear** opens a tiny inline settings panel (badge on/off, default interval) — no separate options page.
+- **Footer gear** opens a tiny inline settings panel (badge on/off, default interval in seconds, finish notification on/off) — no separate options page.
 
 ### Visual direction
 - Compact, card-based layout; system font stack; one accent color (e.g. a calm blue/teal) used for the running state and countdowns.
@@ -148,7 +153,8 @@ tab-reload-timer/
 │   ├── make_icons.py      #   regenerates icons/
 │   ├── preview.html       #   popup preview in a plain browser tab
 │   ├── chrome-stub.js     #   fake chrome.* APIs for the preview (?state=idle|run|paused|waiting|blocked)
-│   └── build.sh           #   packages dist/tab-reload-timer-<version>.zip for the Web Store
+│   ├── build.sh           #   packages dist/tab-reload-timer-<version>.zip for the Web Store
+│   └── tests/             #   unit tests for background.js (node --test "dev/tests/*.test.js")
 ├── README.md
 ├── PRIVACY.md
 └── spec.md

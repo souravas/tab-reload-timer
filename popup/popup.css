@@ -446,7 +446,7 @@ body {
 
 .jobs { margin-top: 12px; }
 .jobs-head {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; gap: 7px;
   padding: 0 4px 6px;
 }
 .jobs-head .count {
@@ -456,7 +456,9 @@ body {
   border-radius: 99px;
   padding: 0 7px;
   line-height: 16px;
+  margin-right: auto;
 }
+.jobs-actions { display: inline-flex; gap: 2px; }
 
 #jobsList { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 
@@ -489,7 +491,7 @@ body {
 .job-time.paused { color: var(--faint); }
 .job-time.waiting { color: var(--warn); }
 
-.job-row .mini-btn {
+.mini-btn {
   display: grid; place-items: center;
   width: 22px; height: 22px;
   border: 0; border-radius: 6px;
@@ -499,9 +501,9 @@ body {
   flex: none;
   transition: all .12s;
 }
-.job-row .mini-btn svg { width: 12px; height: 12px; }
-.job-row .mini-btn:hover { background: var(--surface-2); color: var(--text); }
-.job-row .mini-btn.stop:hover { color: var(--danger); }
+.mini-btn svg { width: 12px; height: 12px; }
+.mini-btn:hover { background: var(--surface-2); color: var(--text); }
+.mini-btn.stop:hover { color: var(--danger); }
 
 /* view transitions */
 #idleView, #runView, #blockedView { animation: rise .2s ease-out; }
