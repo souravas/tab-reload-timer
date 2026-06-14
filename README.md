@@ -74,4 +74,4 @@ sh dev/build.sh                    # package dist/tab-reload-timer-<version>.zip
 
 ## License
 
-[MIT](LICENSE)
+[GPL-3.0](LICENSE)
