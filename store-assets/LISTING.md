@@ -35,6 +35,18 @@ Use the contents of [description.txt](description.txt).
 
 **English**
 
+### Homepage URL
+
+```
+https://github.com/souravas/tab-reload-timer
+```
+
+### Support URL
+
+```
+https://github.com/souravas/tab-reload-timer/issues
+```
+
 ### Images
 
 | Asset | File |
