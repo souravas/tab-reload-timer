@@ -1,6 +1,6 @@
 # Tab Reload Timer
 
-Chrome extension that automatically reloads tabs on a custom interval. Listed on the Web Store as **Tab Reload Timer — Auto Refresh Pages**. Per-tab timers with random variation, badge countdown, hard reload, and session restore — in a popup you can understand in 5 seconds and configure in 2 clicks.
+Chrome extension that automatically reloads tabs on a custom interval. Available on the Chrome Web Store as [**Tab Reload Timer — Auto Refresh Pages**](https://chromewebstore.google.com/detail/doahmkabobmpmljfflcdfdnlfolokfgd). Per-tab timers with random variation, badge countdown, hard reload, and session restore — in a popup you can understand in 5 seconds and configure in 2 clicks.
 
 ## Features
 
@@ -20,11 +20,7 @@ Chrome extension that automatically reloads tabs on a custom interval. Listed on
 
 ## Install
 
-From source (until the Web Store listing is live):
-
-1. Clone this repository
-2. Open `chrome://extensions`, enable **Developer mode**
-3. Click **Load unpacked** and select the repository folder
+[**Install from the Chrome Web Store**](https://chromewebstore.google.com/detail/doahmkabobmpmljfflcdfdnlfolokfgd)
 
 ## How it works
 
